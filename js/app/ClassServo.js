@@ -13,34 +13,28 @@ class ClassServo extends ClassMiddleActuator {
         /******************** Validation and init ********************** */
         if (typeof _opts.maxRange !== 'number' || 
             typeof _opts.maxPulse !== 'number' ||
-            typeof _opts.minPulse !== 'number') throw new Error('Some arg are missing');
+            typeof _opts.minPulse !== 'number') throw new Error('Some args are missing');
         if (_opts.minRange && typeof _opts.minRange !== 'number' ||
             _opts.minRange >= _opts.maxRange ||
             _opts.minPulse >= _opts.maxPulse ||
-            _opts.defaultPos && typeof _opts.defaultPos !== 'number' ||
-            _opts.defaultPos < _opts.minRange || 
-            _opts.defaultPos > _opts.maxRange) throw new Error('Invalid arg');
+            _opts.startPos && typeof _opts.startPos !== 'number' ||
+            _opts.startPos < _opts.minRange || 
+            _opts.startPos > _opts.maxRange) throw new Error('Invalid arg');
 
-        this._MinRange = _opts.minRange || 0;
+        this._MinRange = _opts.minRange || 0;   
         this._MaxRange = _opts.maxRange;
         this._MaxPulse = _opts.maxPulse;
         this._MinPulse = _opts.minPulse;
-        this._DefaultPos = _opts.defaultPos || this._MinRange;
+        this._StartPos = _opts.startPos || this._MinRange;
         this._LastInput = undefined;
         this.Reset();
-        /******************** Returning channel *************************** */
+        /******************** Modifying channel *************************** */
         let channel = this.GetChannel(0);
+        // Инициализация геттера, который возвращает положение сервопривода в углах
         Object.defineProperty(channel, 'Position', {
             get: () => this._LastInput
         });
-        return channel;
     }
-    /**
-     * @getter
-     * Возвращает позицию, в которую был установлен сервопривод
-     * @returns {Number} величина в градусах
-     */
-    get Position() { return this._LastInput; }
 
     On(_chNum, _deg) {
         if (typeof _deg !== 'number') throw new Error('Invalid arg');
@@ -52,7 +46,7 @@ class ClassServo extends ClassMiddleActuator {
         const proportion = (x, in_low, in_high, out_low, out_high) => {
             return (x - in_low) * (out_high - out_low) / (in_high - in_low) + out_low;
         }
-        const freq = 20;    //частота ШИМа
+        const freq = 50;    //частота ШИМа
         const msec = proportion(deg, this._MinRange, this._MaxRange, this._MinPulse, this._MaxPulse);   //градусы -> длина импульса в мс
         const val = proportion(msec, 0, 20, 0, 1);  //мс -> число [0 : 1] (на практике приблизительно [0.027 : 0.12])
         
@@ -65,10 +59,6 @@ class ClassServo extends ClassMiddleActuator {
         this._IsChOn[0] = false;
     }
     Reset() {
-        this.On(this._DefaultPos);      //установка сервопривода в стандартное положение
-        setTimeout(() => {
-            digitalWrite(this._Pins[0], 1);  //выкл. удержания позиции после таймаута
-            this._IsChOn[0] = false;
-        }, 1000);
+        this.On(this._StartPos);      //установка сервопривода в стандартное положение
     }
 }

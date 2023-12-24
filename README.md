@@ -11,27 +11,28 @@
 ## Лицензия
 
 <div style = "color: #555">
+
 В разработке
 </div>
 
 ## Описание
 <div style = "color: #555">
 
-Модуль предназначен для прикладной работы с PDW сервоприводами в рамках фреймворка EcoLight и обеспечивает данный функционал:
+Модуль предназначен для прикладной работы с PDW сервоприводами в рамках фреймворка EcoLight и обеспечивает следующий функционал:
 - Инициализацию и идентификацию различных моделей сервоприводов в соответствии с их характеристиками;
 - Управления положением сервопривода, путём поворота его вала на допустимый угол.
 Примечание: корректная инициализация модуля в соответствии с характеристиками используемого сервопривода гарантирует, что команды, которые могут навредить прибору, будут отклоняться;
 - Хранение информации о текущей позиции сервопривода;
 - Перезагрузку актуатора, возвращением его вала в стандартное положение.
-Модуль разработан в соответствии с архитектурой актуаторов и является потомком класса [ClassMiddleActuator](https://github.com/Konkery/ModuleActuator/blob/main/README.md).
+Модуль разработан в соответствии с [архитектурой актуаторов](https://github.com/Konkery/ModuleActuator/blob/main/README.md) и является потомком класса *ClassMiddleActuator*.
 
 </div>
 
 ## Конструктор
 <div style = "color: #555">
 
-Конструктор принимает 1 объект типа **ActuatorOptsType** и 1 объект типа **ActuatorPropsType**.
-Пример *_opts* типа [**ActuatorOptsType**](https://github.com/Konkery/ModuleActuator/blob/main/README.md):
+В соответствии с подходом, заложенным ModuleActuator, конструктор принимает 1 объект типа **ActuatorOptsType** и 1 объект типа **ActuatorPropsType** (подробнее по [ссылке](https://github.com/Konkery/ModuleActuator/blob/fork-nikita/README_ANCESTOR.md#%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80)).
+Пример *_actuatorProps* типа [**ActuatorOptsType**](https://github.com/Konkery/ModuleActuator/blob/main/README.md):
 ```js
 let _actuatorProps = {
     name: "FT5519M",
@@ -39,20 +40,29 @@ let _actuatorProps = {
     channelNames: ["angle"],
     typeInSignals: ["digital"],
     quantityChannel: 1,
+    manufacturingData: {
+        IDManufacturing: [
+            { "Adafruit": "" }  
+        ],
+        IDsupplier: [
+            { "Adafruit": "" }  
+        ],
+        HelpSens: "Servo"
+    }
 };
-
+```
+Пример *_opts* типа [**ActuatorOptsType**](https://github.com/Konkery/ModuleActuator/blob/main/README.md):
+```js
 const _opts = {
-    pins: [A0],
-    minRange: 0,
-    maxRange: 180,
-    minPulse: 544,
-    maxPulse: 2400,
-    defaultPos: 0
+    pins: [A0],     //массив пинов
+    minRange: 0,    //мин. угол
+    maxRange: 120,  //макс. угол
+    minPulse: 0.9,  //мин. импульс
+    maxPulse: 2.1,  //макс. импульс
+    startPos: 0     //начальная позиция
 }
 
 ```
-
-Переданные значения далее сохраняются в свойствах модуля, поэтому с их назначением можно ознакомиться ниже.
 
 </div>
 
@@ -70,9 +80,9 @@ const _opts = {
 ### Методы
 <div style = "color: #555">
 
-- <mark style="background-color: lightblue">On(_deg)</mark> - выполняет поворот вала сервопривода в указанное положение;
+- <mark style="background-color: lightblue">On(_chNum, _deg)</mark> - выполняет поворот вала сервопривода в указанное положение. При работе через канал, аргумент *_chNum* пропускается;
 - <mark style="background-color: lightblue">Off()</mark> - прекращает удержание угла сервоприводом;
-- <mark style="background-color: lightblue">Reset()</mark> - выполняет перезагрузку сервопривода, возвращая его в стандартное положение.
+- <mark style="background-color: lightblue">Reset()</mark> - устанавливает вал сервоприпода его в начальное положение, заданное через конструктор либо равное мин.возможному.
 </div>
 
 ### Примеры
@@ -81,49 +91,48 @@ const _opts = {
 
 ```js
 //Подключение необходимых модулей
-const ClassAppError = require("ModuleAppError.min.js");
-const ClassI2CBus   = require("ModuleI2CBus.min.js");
-const VL6180 = require("ModuleVL6180.min.js");
-const NumIs  = require("ModuleAppMath.min.js");
-     NumIs.is();
-
-//Создание I2C шины
-let I2Cbus = new ClassI2CBus();
-let _bus = I2Cbus.AddBus({sda: P5, scl: P4, bitrate: 100000}).IDbus;
+const ClassAppError       = require('ModuleAppError.min.js');
+const ClassMiddleActuator = require('ModuleActuator.min');
+const ClassServo          = require('ModuleServo.min.js');
 
 //Настройка передаваемых объектов
-let opts = { bus: _bus, pins: [P5, P4], address: 0x29 };
-let sensor_props = {
-    quantityChannel: 2,
-    name: "VL6180",
-    type: "sensor",
-    channelNames: ['light', 'range'],
-    typeInSignal: "analog",
-    typeOutSignal: "digital",
-    busType: ["i2c"],
+let servoProps = {
+    name: "FT5519M",
+    type: "actuator",
+    channelNames: ["angle"],
+    typeInSignals: ["digital"],
+    quantityChannel: 1,
     manufacturingData: {
-        IDManufacturing: [                  
-            { "Adafruit": "4328435534" }    
+        IDManufacturing: [
+            { "Adafruit": "" }  
         ],
-        IDsupplier: [                     
-            { "Adafruit": "4328435534" }    
+        IDsupplier: [
+            { "Adafruit": "" }  
         ],
-        HelpSens: "VL6180 ambience and range sensor"
+        HelpSens: "Servo"
     }
 };
+
+const opts = {
+    pins: [P2],     
+    minRange: 0, 
+    maxRange: 120,
+    minPulse: 0.9,  
+    maxPulse: 2.1, 
+    startPos: 0     
+}
 //Создание объекта класса
-let vl6180 = new VL6180(opts, sensor_props);
+//Так как у серво только один канал, сразу сохраняем ссылку на него
+let servo = new ClassServo(servo, sensor_props).GetChannel(0);
 
-//Создание каналов и их использование
-const ch0 = vl6180.GetChannel(0);
-const ch1 = vl6180.GetChannel(1);
-ch0.Start();
-ch1.Start();
-
+//Смена положения с 25° до 110° и обратно по интервалу  
+let flag = false;
 setInterval(() => {
-  console.log(ch0.Value + "lux");
-  console.log(ch1.Value + "mm");
-}, 1000);
+    let angle = flag ? 25 : 110;
+    flag = !flag;
+
+    servo.On(angle)
+}, 2000);
 ```
 Результат выполнения:
 <div align='center'>
