@@ -18,14 +18,12 @@ class ClassServo extends ClassMiddleActuator {
             _opts.minPulse >= _opts.maxPulse ||
             _opts.startPos && typeof _opts.startPos !== 'number' ||
             _opts.startPos < 0 || 
-            _opts.startPos > _opts.range ||
-            _opts.offset && typeof _opts.offset !== 'number') throw new Error('Invalid arg');
+            _opts.startPos > _opts.range) throw new Error('Invalid arg');
 
         this._Range = _opts.range;
         this._MaxPulse = _opts.maxPulse;
         this._MinPulse = _opts.minPulse;
         this._StartPos = _opts.startPos || 0;
-        this._Offsets[0] = _opts.offset || 0;
         this._Position = undefined;
 
         // this.Reset();
@@ -42,7 +40,7 @@ class ClassServo extends ClassMiddleActuator {
             return (x - in_low) * (out_high - out_low) / (in_high - in_low) + out_low;
         }
         const freq = 50;    //частота ШИМа
-        const msec = proportion(pos, 0, 1, this._MinPulse + this._Offsets[0], this._MaxPulse + this._Offsets[0]);   //процент -> длина импульса в мс
+        const msec = proportion(pos, 0, 1, this._MinPulse, this._MaxPulse);   //процент -> длина импульса в мс
         const val = proportion(msec, 0, 20, 0, 1);  //мс -> число [0 : 1] (на практике приблизительно [0.027 : 0.12])
         
         this._IsChOn[0] = true;
