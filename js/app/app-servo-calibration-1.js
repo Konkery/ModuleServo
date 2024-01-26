@@ -9,7 +9,7 @@ function testPulseDur(pin, pulseDur) {
     }, 800);
 }
 
-function startCalibration(pin, minPulse, maxPulse) {
+function startCalibration(pin, minPulse, maxPulse, range) {
     if (typeof minPulse !== 'number' || minPulse <= 0) { 
         console.log('Given min pulse value is negative or not a number at all');
         return;
@@ -19,14 +19,14 @@ function startCalibration(pin, minPulse, maxPulse) {
         return;
     }
     testPulseDur(pin, minPulse);
-    console.log('Servo in min position');
+    console.log(`Servo in min position. Pulse dur = ${minPulse}`);
     setTimeout(() => {
         testPulseDur(pin, (maxPulse+minPulse)/2);
-        console.log('Servo in mid position');
+        console.log(`Servo in mid position (${range/2}). Pulse dur = ${(maxPulse+minPulse)/2}`);
     }, 3000);
     setTimeout(() => {
         testPulseDur(pin, maxPulse);
-        console.log('Servo in max position');
+        console.log(`Servo in max position. Pulse dur = ${maxPulse}`);
     }, 6000);
     setTimeout(() => {
         console.log('Done! Call "startCalibration" method again to try another pulse dur values');
@@ -38,5 +38,6 @@ function startCalibration(pin, minPulse, maxPulse) {
 let pin = P2;               
 let min_pulse = 0.9;
 let max_pulse = 0.21;
+let range = 180;
 
-startCalibration(pin, min_pulse, max_pulse);
+startCalibration(pin, min_pulse, max_pulse, range);

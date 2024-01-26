@@ -20,11 +20,12 @@
 
 Модуль предназначен для прикладной работы с PDW сервоприводами в рамках фреймворка EcoLight и обеспечивает следующий функционал:
 - Инициализацию и идентификацию различных моделей сервоприводов в соответствии с их характеристиками;
-- Управления положением сервопривода, путём поворота его вала на допустимый угол.
-Примечание: корректная инициализация модуля в соответствии с характеристиками используемого сервопривода гарантирует, что команды, которые могут навредить прибору, будут отклоняться;
+- Управление положением сервопривода, путём поворота его вала на допустимый угол;
+Примечание: корректная инициализация модуля в соответствии с характеристиками используемого сервопривода гарантирует, что недопустимые команды будут отклоняться;
 - Хранение информации о текущей позиции сервопривода;
-- Перезагрузку актуатора, возвращением его вала в стандартное положение.
-Модуль разработан в соответствии с [архитектурой актуаторов](https://github.com/Konkery/ModuleActuator/blob/main/README.md) и является потомком класса *ClassMiddleActuator*.
+- Возврат вала сервопривода в стандартное положение, заданное пользователем.
+
+Модуль разработан в соответствии с [архитектурой актуаторов](https://github.com/Konkery/ModuleActuator/blob/main/README.md), соответственно, *ClassServo* наследует и реализует является функционал *ClassMiddleActuator*, а прикладная работа с данным модулем выполняется через *ClassChannelActuator*, который обеспечивает унифицированный интерфейс.
 
 </div>
 
@@ -35,59 +36,64 @@
 Пример *_actuatorProps* типа [**ActuatorOptsType**](https://github.com/Konkery/ModuleActuator/blob/main/README.md):
 ```js
 let _actuatorProps = {
-    name: "FT5519M",
+    name: "FS90",
     type: "actuator",
-    channelNames: ["angle"],
-    typeInSignals: ["digital"],
+    channelNames: ["position"],
+    typeInSignals: ["analog"],
     quantityChannel: 1,
     manufacturingData: {
         IDManufacturing: [
-            { "Adafruit": "" }  
+            { "Feetech": "unknown" }  
         ],
         IDsupplier: [
-            { "Adafruit": "" }  
+            { "Robotehnika": "14000615" }  
         ],
-        HelpSens: "Servo"
+        HelpSens: "PWM servo"
     }
 };
 ```
 Пример *_opts* типа [**ActuatorOptsType**](https://github.com/Konkery/ModuleActuator/blob/main/README.md):
 ```js
 const _opts = {
-    pins: [A0],     //массив пинов
-    minRange: 0,    //мин. угол
-    maxRange: 120,  //макс. угол
-    minPulse: 0.9,  //мин. импульс
-    maxPulse: 2.1,  //макс. импульс
-    startPos: 0     //начальная позиция
+    pins: [P2],       //массив пинов
+    range: 180,       //диапазон поворота вала сервопривода
+    minPulse: 0.544,  //мин. импульс
+    maxPulse: 2.4,    //макс. импульс
+    startPos: 0       //начальная позиция
 }
-
 ```
+
+Важнейшими параметрами здесь являются величины minPulse и maxPulse, равные длине импульса, который необходимо подавать на пин для удержания сервопривода в минимальном и максимальном положении. Эти значения можно найти в спецификации (даташите) конкретной модели сервопривода, однако они часто расходятся с фактическими мин. и макс. значениями импульсов. 
+
+Для быстрого и удобного определения корректных minPulse и maxPulse можно воспользоваться [программой](./js/app/app-servo-calibration-1.js) для калибровки, которая покажет как работает сервопривод при разных значениях minPulse и maxPulse. Необходимо просто постепенно изменять предполагаемый диапазон этих величин пока вал сервопривода не начнет точно попадать в нулевое, максимальное и среднее между ними возможные положения.       
+
 
 </div>
 
 ### Поля
 <div style = "color: #555">
 
-- <mark style="background-color: lightblue">_MinRange</mark> - минимальный угол, на который может поворачиваться вал сервопривода. По-умолчанию равен 0;
-- <mark style="background-color: lightblue">_MaxRange</mark> - максимальный угол, который который может занять вал;
+- <mark style="background-color: lightblue">_Range</mark> - диапазон работы сервопривода. Также соответствует максимальному углу, который который может занять актуатор;
 - <mark style="background-color: lightblue">_MinPulse</mark> - длина импульса, задающего минимальное положение вала;
 - <mark style="background-color: lightblue">_MaxPulse</mark> - длина импульса, задающего максимальное положение вала;
 - <mark style="background-color: lightblue">_DefaultPos</mark> - величина в градусах, определяющая стандартное положение вала;
-- <mark style="background-color: lightblue">_LastInput</mark> - последнее значение, переданное в метод On(_deg). Внутреннее свойство модуля, не предназначенное для того, чтобы пользователь работал с ним напрямую.
+- <mark style="background-color: lightblue">_Position</mark> - последняя позиция, принятая сервоприводом.
 </div>
 
 ### Методы
 <div style = "color: #555">
 
-- <mark style="background-color: lightblue">On(_chNum, _deg)</mark> - выполняет поворот вала сервопривода в указанное положение. При работе через канал, аргумент *_chNum* пропускается;
+- <mark style="background-color: lightblue">On(_chNum, _pos)</mark> - выполняет поворот вала сервопривода в указанное положение. При работе через канал, аргумент *_chNum* пропускается;
 - <mark style="background-color: lightblue">Off()</mark> - прекращает удержание угла сервоприводом;
-- <mark style="background-color: lightblue">Reset()</mark> - устанавливает вал сервоприпода его в начальное положение, заданное через конструктор либо равное мин.возможному.
+- <mark style="background-color: lightblue">Reset()</mark> - устанавливает вал сервопривода его в начальное положение, заданное через конструктор либо определяемое минимальной величиной из диапазона *_Range*;
+- <mark style="background-color: lightblue">GetPosition()</mark> - возвращает объект, содержащий информацию о текущей позиции сервопривода. 
+Примечание: метод возвращает данные, которые определяются последней командой, полученной модулем, а тк же характеристиками, указанными при инициализации. Поэтому если положение вала сервопривода было изменено в обход методов, представленных в ModuleServo, полученные значения вероятно не будут соответствовать действительности.
+
 </div>
 
 ### Примеры
 <div style = "color: #555">
-Пример программы для:
+Пример программы c управлением сервоприводом:
 
 ```js
 //Подключение необходимых модулей
@@ -97,47 +103,47 @@ const ClassServo          = require('ModuleServo.min.js');
 
 //Настройка передаваемых объектов
 let servoProps = {
-    name: "FT5519M",
+    name: "FS90",
     type: "actuator",
-    channelNames: ["angle"],
-    typeInSignals: ["digital"],
+    channelNames: ["position"],
+    typeInSignals: ["analog"],
     quantityChannel: 1,
     manufacturingData: {
         IDManufacturing: [
-            { "Adafruit": "" }  
+            { "Feetech": "unknown" }  
         ],
         IDsupplier: [
-            { "Adafruit": "" }  
+            { "Robotehnika": "14000615" }  
         ],
-        HelpSens: "Servo"
+        HelpSens: "PWM servo"
     }
 };
 
 const opts = {
-    pins: [P2],     
-    minRange: 0, 
-    maxRange: 120,
-    minPulse: 0.9,  
-    maxPulse: 2.1, 
-    startPos: 0     
+    pins: [P2],       
+    range: 180,       
+    minPulse: 0.544,  
+    maxPulse: 2.4,    
+    startPos: 0       
 }
 //Создание объекта класса
 //Так как у серво только один канал, сразу сохраняем ссылку на него
-let servo = new ClassServo(servo, sensor_props).GetChannel(0);
+let servo = new ClassServo(opts, servoProps).GetChannel(0);
 
-//Смена положения с 25° до 110° и обратно по интервалу  
+//Смена положения с 0° до 180° и обратно по интервалу  
 let flag = false;
 setInterval(() => {
-    let angle = flag ? 25 : 110;
+    let pos = flag ? 0 : 1;
     flag = !flag;
 
-    servo.On(angle)
+    servo.On(pos);
 }, 2000);
 ```
-Результат выполнения:
-<div align='center'>
+В результате выполнения программы сервопривод начнет менять положение от минимального до максимального с интервалом в секунды.
+
+<!-- <div align='center'>
     <img src='./res/example-1.png'>
-</div>
+</div> -->
 
 </div>
 
