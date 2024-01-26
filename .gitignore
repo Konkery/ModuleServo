@@ -1,5 +1,5 @@
 # строки начинающиеся на # - это комментарии, они не учитываются
 .vscode/*
 *.code-workspace
-
+/res/garbage/
 #app-test*.js
