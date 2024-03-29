@@ -2,14 +2,14 @@
  * @class
  * Класс предназначен для обеспечения управления различными моделями сервоприводов с удержанием угла. Позволяет осуществлять инициализацию и управление сервоприводом в соответствии с его характеристиками: возможные углы поворота, мин. и макс. длины импульса, положение по-умолчанию.   
  */
-class ClassServo extends ClassMiddleActuator {
+class ClassServo extends ClassActuator {
     /**
      * @constructor
-     * @param {ActuatorPropsType} _actuatorProps 
      * @param {ActuatorOptsType} _opts
+     * @param {ActuatorPropsType} _actuatorProps  
      */
-    constructor(_actuatorProps, _opts) {
-        ClassMiddleActuator.call(this, _actuatorProps, _opts);
+    constructor(_opts, _actuatorProps) {
+        ClassMiddleActuator.call(this, _opts, _actuatorProps);
         /******************** Validation and init ********************** */
         if (typeof _opts.range !== 'number' || 
             typeof _opts.maxPulse !== 'number' ||
